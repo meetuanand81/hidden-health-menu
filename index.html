@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Hidden Health – Order</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --purple: #5b4d8a; --purple-light: #7b6daa; --purple-pale: #ede9f8;
+      --purple-bg: #f5f2fc; --dark: #1e1828; --offer: #c94b7b; --muted: #7a7190;
+    }
+    body { font-family: 'Nunito', sans-serif; background: var(--purple-bg); color: var(--dark); min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: radial-gradient(circle, #c5b8e8 1px, transparent 1px);
+      background-size: 28px 28px; opacity: 0.2; pointer-events: none; z-index: 0;
+    }
+    header {
+      background: var(--purple); padding: 28px 24px 24px; text-align: center;
+      position: relative; z-index: 1;
+    }
+    header::after {
+      content: ''; position: absolute; bottom: -18px; left: 0; right: 0;
+      height: 36px; background: var(--purple-bg);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 0.08em; color: #fff; line-height: 1; }
+    .logo-sub { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-top: 4px; }
+    .badge { display: inline-block; background: var(--offer); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-top: 10px; }
+    .wrap { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 32px 16px 140px; }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; letter-spacing: 0.08em; color: var(--purple); margin-bottom: 3px; }
+    .section-line { width: 40px; height: 3px; background: var(--offer); border-radius: 2px; margin-bottom: 16px; }
+    .menu-section { margin-bottom: 36px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .card {
+      background: #fff; border: 2px solid transparent; border-radius: 14px;
+      padding: 16px; display: flex; flex-direction: column;
+      box-shadow: 0 2px 10px rgba(91,77,138,0.07); transition: all 0.2s ease;
+      position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--purple), var(--purple-light));
+      transform: scaleX(0); transition: transform 0.2s; transform-origin: left;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(91,77,138,0.13); }
+    .card:hover::before, .card.active::before { transform: scaleX(1); }
+    .card.active { border-color: var(--purple); background: #faf8ff; }
+    .item-name { font-weight: 800; font-size: 0.92rem; line-height: 1.3; margin-bottom: 4px; color: var(--dark); }
+    .item-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple-light); background: var(--purple-pale); padding: 2px 7px; border-radius: 10px; display: inline-block; margin-bottom: 10px; }
+    .price-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .price-original { font-size: 12px; color: var(--muted); text-decoration: line-through; }
+    .price-offer { font-size: 1.1rem; font-weight: 800; color: var(--offer); }
+    .qty-row { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .qty-controls { display: flex; align-items: center; gap: 8px; }
+    .qty-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 2px solid var(--purple-pale); background: #fff; color: var(--purple);
+      font-size: 18px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .qty-btn:hover, .card.active .qty-btn { background: var(--purple); color: #fff; border-color: var(--purple); }
+    .qty-num { font-size: 1.1rem; font-weight: 800; min-width: 24px; text-align: center; }
+    .item-subtotal { font-size: 12px; font-weight: 700; color: var(--purple); }
+    .cart-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: var(--dark);
+      padding: 14px 20px 24px; display: flex; align-items: center; gap: 12px;
+      z-index: 100; box-shadow: 0 -4px 24px rgba(30,24,40,0.2);
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    .cart-bar.visible { transform: translateY(0); }
+    .cart-info { flex: 1; }
+    .cart-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: rgba(255,255,255,0.5); }
+    .cart-total { font-size: 1.3rem; font-weight: 800; color: #fff; }
+    .gen-btn {
+      background: var(--offer); color: #fff; border: none; border-radius: 12px;
+      padding: 14px 22px; font-family: 'Nunito', sans-serif; font-size: 14px;
+      font-weight: 800; cursor: pointer; white-space: nowrap; transition: background 0.15s;
+    }
+    .gen-btn:hover { background: #b03a6a; }
+    .gen-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .clear-btn {
+      background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: none;
+      border-radius: 10px; padding: 14px; font-family: 'Nunito', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s;
+    }
+    .clear-btn:hover { background: rgba(255,255,255,0.2); }
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(30,24,40,0.75); backdrop-filter: blur(8px);
+      z-index: 200; align-items: center; justify-content: center; padding: 20px;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 24px; width: 100%; max-width: 400px;
+      padding: 28px 24px; box-shadow: 0 24px 64px rgba(91,77,138,0.25);
+      animation: popIn 0.3s cubic-bezier(.4,0,.2,1); text-align: center;
+    }
+    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; color: var(--purple); margin-bottom: 4px; }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .order-summary { background: var(--purple-pale); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; text-align: left; }
+    .order-line { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+    .order-line-name { font-weight: 600; color: var(--dark); }
+    .order-line-price { font-weight: 700; color: var(--purple); }
+    .order-divider { border: none; border-top: 1px solid rgba(91,77,138,0.2); margin: 8px 0; }
+    .order-total-line { display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; }
+    .order-total-line span:last-child { color: var(--offer); }
+    #qr-container { display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; padding: 14px; background: #fff; border: 3px solid var(--purple-pale); border-radius: 16px; width: fit-content; }
+    .scan-note { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+    .new-order-btn {
+      width: 100%; background: var(--purple); color: #fff; border: none;
+      border-radius: 12px; padding: 15px; font-family: 'Nunito', sans-serif;
+      font-size: 15px; font-weight: 800; cursor: pointer; transition: background 0.15s;
+    }
+    .new-order-btn:hover { background: var(--purple-light); }
+    .loading { font-size: 13px; color: var(--muted); padding: 20px 0; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">Hidden Health</div>
+  <div class="logo-sub">Freshly Made · High Protein</div>
+  <div class="badge">🎉 B2B Special Offers</div>
+</header>
+<div class="wrap">
+  <div class="menu-section">
+    <div class="section-title">Protein Bars</div>
+    <div class="section-line"></div>
+    <div class="grid" id="bars"></div>
+  </div>
+  <div class="menu-section">
+    <div class="section-title">Protein Cookies</div>
+    <div class="section-line"></div>
+    <div class="grid" id="cookies"></div>
+  </div>
+</div>
+
+<div class="cart-bar" id="cartBar">
+  <div class="cart-info">
+    <div class="cart-label" id="cartLabel">0 items selected</div>
+    <div class="cart-total" id="cartTotal">0 AED</div>
+  </div>
+  <button class="clear-btn" onclick="clearCart()">Clear</button>
+  <button class="gen-btn" id="genBtn" onclick="generateQR()">📲 Generate QR</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-title">Scan to Pay</div>
+    <div class="modal-sub">Show this to your customer</div>
+    <div class="order-summary" id="modalSummary"></div>
+    <div id="qr-container"></div>
+    <p class="scan-note">📱 Customer scans with phone camera<br>and pays securely via Stripe</p>
+    <button class="new-order-btn" onclick="newOrder()">✅ Done — New Order</button>
+  </div>
+</div>
+
+<script>
+const ITEMS = {
+  bars: [
+    { id: 'b1', name: 'Hazelnut Fudgy Protein Mini Bars', tag: 'Protein Bar', price: 29, offer: 25, priceId: 'price_1Ta71zD7TbbvAb7bN4SZYTXR' },
+    { id: 'b2', name: 'Nutty Chocolate Protein Bar',       tag: 'Protein Bar', price: 19, offer: 17, priceId: 'price_1Ta74ED7TbbvAb7bMH9YFqjV' },
+    { id: 'b3', name: 'Raspberry Yoghurt Protein Bar',     tag: 'Protein Bar', price: 40, offer: 35, priceId: 'price_1Ta74qD7TbbvAb7b286h0cMu' },
+    { id: 'b4', name: 'Salted Caramel Protein Bar',        tag: 'Protein Bar', price: 26, offer: 23, priceId: 'price_1Ta72pD7TbbvAb7bIleiatjK' },
+  ],
+  cookies: [
+    { id: 'c1', name: 'Hazelnut Protein Cookie',            tag: 'Protein Cookie', price: 17, offer: 15,   priceId: 'price_1Ta78GD7TbbvAb7b6PsvHwPa' },
+    { id: 'c2', name: 'Matcha Cream Cheese Protein Cookie', tag: 'Protein Cookie', price: 14, offer: 12.5, priceId: 'price_1Ta78rD7TbbvAb7bZT6WEIZt' },
+    { id: 'c3', name: 'Pistachio Chocolate Protein Cookie', tag: 'Protein Cookie', price: 18, offer: 16,   priceId: 'price_1Ta79ND7TbbvAb7bIGxWXA6u' },
+    { id: 'c4', name: 'Peanut Butter Protein Cookie',       tag: 'Protein Cookie', price: 17, offer: 15,   priceId: 'price_1Ta79rD7TbbvAb7byoyH6YVe' },
+  ]
+};
+
+const allItems = () => [...ITEMS.bars, ...ITEMS.cookies];
+const getItem  = id => allItems().find(i => i.id === id);
+const cart     = {};
+
+function fmt(n) { return Number.isInteger(n) ? n + ' AED' : n.toFixed(1) + ' AED'; }
+
+function renderGrid(items, containerId) {
+  document.getElementById(containerId).innerHTML = items.map(item => `
+    <div class="card" id="card-${item.id}">
+      <div class="item-name">${item.name}</div>
+      <div class="item-tag">${item.tag}</div>
+      <div class="price-row">
+        <span class="price-original">${fmt(item.price)}</span>
+        <span class="price-offer">${fmt(item.offer)}</span>
+      </div>
+      <div class="qty-row">
+        <div class="qty-controls">
+          <button class="qty-btn" onclick="change('${item.id}', -1)">−</button>
+          <span class="qty-num" id="qn-${item.id}">0</span>
+          <button class="qty-btn" onclick="change('${item.id}', 1)">+</button>
+        </div>
+        <span class="item-subtotal" id="sub-${item.id}"></span>
+      </div>
+    </div>
+  `).join('');
+}
+
+renderGrid(ITEMS.bars,    'bars');
+renderGrid(ITEMS.cookies, 'cookies');
+
+function change(id, delta) {
+  const item = getItem(id);
+  const next = Math.max(0, (cart[id] || 0) + delta);
+  if (next === 0) delete cart[id]; else cart[id] = next;
+  document.getElementById('qn-' + id).textContent = next;
+  document.getElementById('sub-' + id).textContent = next > 0 ? fmt(item.offer * next) : '';
+  document.getElementById('card-' + id).classList.toggle('active', next > 0);
+  updateBar();
+}
+
+function updateBar() {
+  const count = Object.values(cart).reduce((a,b) => a+b, 0);
+  const total = Object.entries(cart).reduce((s,[id,q]) => s + getItem(id).offer * q, 0);
+  document.getElementById('cartBar').classList.toggle('visible', count > 0);
+  document.getElementById('cartLabel').textContent = count + (count===1?' item':' items') + ' selected';
+  document.getElementById('cartTotal').textContent = fmt(total);
+}
+
+function clearCart() {
+  Object.keys(cart).forEach(id => {
+    delete cart[id];
+    document.getElementById('qn-' + id).textContent = '0';
+    document.getElementById('sub-' + id).textContent = '';
+    document.getElementById('card-' + id).classList.remove('active');
+  });
+  updateBar();
+}
+
+async function generateQR() {
+  const entries = Object.entries(cart);
+  if (!entries.length) return;
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Creating...';
+
+  // Build order summary
+  let summaryHTML = '';
+  let total = 0;
+  entries.forEach(([id, qty]) => {
+    const item = getItem(id);
+    const sub  = item.offer * qty;
+    total += sub;
+    summaryHTML += `<div class="order-line">
+      <span class="order-line-name">${item.name} × ${qty}</span>
+      <span class="order-line-price">${fmt(sub)}</span>
+    </div>`;
+  });
+  summaryHTML += `<hr class="order-divider">
+    <div class="order-total-line"><span>Total</span><span>${fmt(total)}</span></div>`;
+  document.getElementById('modalSummary').innerHTML = summaryHTML;
+
+  // Call backend to create Stripe Checkout Session
+  const lineItems = entries.map(([id, qty]) => ({
+    priceId: getItem(id).priceId,
+    quantity: qty
+  }));
+
+  try {
+    const res  = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lineItems })
+    });
+    const data = await res.json();
+
+    if (!data.url) throw new Error('No URL returned');
+
+    // Generate QR
+    const container = document.getElementById('qr-container');
+    container.innerHTML = '';
+    new QRCode(container, {
+      text: data.url,
+      width: 200, height: 200,
+      colorDark: '#1e1828', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    document.getElementById('overlay').classList.add('open');
+  } catch(err) {
+    alert('Something went wrong. Please try again.');
+    console.error(err);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📲 Generate QR';
+}
+
+function newOrder() {
+  document.getElementById('overlay').classList.remove('open');
+  clearCart();
+}
+
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay'))
+    document.getElementById('overlay').classList.remove('open');
+});
+</script>
+</body>
+</html>
